@@ -1,43 +1,23 @@
--- [[ AUTO JOINER CUSTOM SOURCE ]] --
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
-
--- COLOQUE SEU LINK DO FIREBASE ABAIXO
 local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
 
--- Criando a Interface (A "Embed" visual)
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 280, 0, 90)
-MainFrame.Position = UDim2.new(0.5, -140, 0.05, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MainFrame.BorderSizePixel = 0
+print("--- AUTO JOINER: AGUARDANDO DADOS ---")
 
-local Corner = Instance.new("UICorner", MainFrame)
-Corner.CornerRadius = UDim.new(0, 8)
-
-local StatusLabel = Instance.new("TextLabel", MainFrame)
-StatusLabel.Size = UDim2.new(1, 0, 1, 0)
-StatusLabel.Text = "📡 MONITORANDO FIREBASE..."
-StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Font = Enum.Font.GothamBold
-StatusLabel.TextSize = 14
-
-print("--- SOURCE CARREGADA COM SUCESSO ---")
-
-while task.wait(3) do
-    local success, response = pcall(function()
-        return HttpService:GetAsync(FIREBASE_URL)
-    end)
-
-    if success and response ~= "null" then
+while task.wait(1) do -- Checa a cada 1 segundo para ser rápido
+    pcall(function()
+        local response = HttpService:GetAsync(FIREBASE_URL)
         local data = HttpService:JSONDecode(response)
-        if data.Ativo then
-            StatusLabel.Text = "🚀 SERVIDOR ENCONTRADO!"
-            StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-            task.wait(1)
-            TeleportService:TeleportToPlaceInstance(data.PlaceId, data.JobId, game.Players.LocalPlayer)
+        
+        -- Note as letras minúsculas: 'jobId' e 'placeId'
+        if data and data.ativo and data.jobId then
+            print("🚀 Servidor encontrado! Teleportando...")
+            
+            -- Limpa o status no Firebase para não teleportar de novo pro mesmo
+            HttpService:PostAsync(FIREBASE_URL, HttpService:JSONEncode({ativo = false}))
+            
+            TeleportService:TeleportToPlaceInstance(data.placeId, data.jobId, game.Players.LocalPlayer)
         end
-    end
+    end)
 end
+
