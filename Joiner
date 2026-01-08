@@ -1,23 +1,68 @@
+-- [[ KALIUX JOINER - PREMIUM SOURCE ]] --
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
+
+-- CONFIGURAÇÃO VISUAL
+local UI_NAME = "KALIUX JOINER"
+local ACCENT_COLOR = Color3.fromRGB(255, 0, 0) -- Vermelho
+local BG_COLOR = Color3.fromRGB(15, 15, 15)    -- Preto
+
+-- URL DO SEU FIREBASE (Certifique-se de manter o /.json no final)
 local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
 
-print("--- AUTO JOINER: AGUARDANDO DADOS ---")
+-- CRIANDO A INTERFACE
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 260, 0, 90)
+MainFrame.Position = UDim2.new(0.5, -130, 0.05, 0)
+MainFrame.BackgroundColor3 = BG_COLOR
+MainFrame.BorderSizePixel = 2
+MainFrame.BorderColor3 = ACCENT_COLOR
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
-while task.wait(1) do -- Checa a cada 1 segundo para ser rápido
-    pcall(function()
-        local response = HttpService:GetAsync(FIREBASE_URL)
-        local data = HttpService:JSONDecode(response)
-        
-        -- Note as letras minúsculas: 'jobId' e 'placeId'
-        if data and data.ativo and data.jobId then
-            print("🚀 Servidor encontrado! Teleportando...")
-            
-            -- Limpa o status no Firebase para não teleportar de novo pro mesmo
-            HttpService:PostAsync(FIREBASE_URL, HttpService:JSONEncode({ativo = false}))
-            
-            TeleportService:TeleportToPlaceInstance(data.placeId, data.jobId, game.Players.LocalPlayer)
-        end
-    end)
-end
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = UI_NAME
+Title.TextColor3 = ACCENT_COLOR
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.BackgroundTransparency = 1
 
+local StatusLabel = Instance.new("TextLabel", MainFrame)
+StatusLabel.Size = UDim2.new(1, 0, 0, 30)
+StatusLabel.Position = UDim2.new(0, 0, 0.4, 0)
+StatusLabel.Text = "📡 AGUARDANDO FIREBASE..."
+StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 13
+StatusLabel.BackgroundTransparency = 1
+
+local ServerInfo = Instance.new("TextLabel", MainFrame)
+ServerInfo.Size = UDim2.new(1, 0, 0, 20)
+ServerInfo.Position = UDim2.new(0, 0, 0.7, 0)
+ServerInfo.Text = "Nenhum dado capturado"
+ServerInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
+ServerInfo.Font = Enum.Font.Gotham
+ServerInfo.TextSize = 11
+ServerInfo.BackgroundTransparency = 1
+
+-- LOOP DE MONITORAMENTO
+task.spawn(function()
+    while task.wait(1) do
+        pcall(function()
+            local response = HttpService:GetAsync(FIREBASE_URL)
+            local data = HttpService:JSONDecode(response)
+            
+            if data and data.jobId and data.jobId ~= "" then
+                StatusLabel.Text = "🚀 SERVIDOR DETECTADO!"
+                ServerInfo.Text = "Valor: " .. (data.serverName or "---")
+                
+                task.wait(0.3)
+                TeleportService:TeleportToPlaceInstance(tonumber(data.placeId), data.jobId, game.Players.LocalPlayer)
+                
+                -- Limpa o Firebase após o teleporte
+                HttpService:PostAsync(FIREBASE_URL, HttpService:JSONEncode({jobId = ""}))
+            end
+        end)
+    end
+end)
