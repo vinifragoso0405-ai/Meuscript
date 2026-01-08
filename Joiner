@@ -1,68 +1,82 @@
--- [[ KALIUX JOINER - BYPASS EDITION ]] --
+-- [[ KALIUX JOINER - BOT SYNC EDITION ]] --
+
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
 
--- CONFIGURAÇÃO VISUAL
-local UI_NAME = "KALIUX JOINER"
-local ACCENT = Color3.fromRGB(255, 0, 0)
-local BG = Color3.fromRGB(15, 15, 15)
+-- URL DO FIREBASE (COM BYPASS DE SEGURANÇA)
+local function GetSecureURL()
+    local b={104,116,116,112,115,58,47,47,109,101,117,45,106,111,105,110,101,114,45,100,101,102,97,117,108,116,45,114,116,100,98,46,102,105,114,101,98,97,115,101,105,111,46,99,111,109,47,46,106,115,111,110}
+    local s="" for i=1,#b do s=s..string.char(b[i]) end return s
+end
 
--- URL DO SEU FIREBASE (COM .json)
-local URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
+local URL = GetSecureURL()
 local currentJob = ""
+local currentPlace = 0
 
--- INTERFACE
+-- UI KALIUX ULTRA BLINDADA
 local sg = Instance.new("ScreenGui", game.CoreGui)
-local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 260, 0, 110)
-main.Position = UDim2.new(0.5, -130, 0.1, 0)
-main.BackgroundColor3 = BG
-Instance.new("UIStroke", main).Color = ACCENT
-Instance.new("UICorner", main)
+sg.Name = "K_" .. HttpService:GenerateGUID(false):sub(1,6)
 
-local label = Instance.new("TextLabel", main)
-label.Size = UDim2.new(1, 0, 0, 40)
-label.Position = UDim2.new(0, 0, 0.2, 0)
-label.Text = "AGUARDANDO..."
-label.TextColor3 = Color3.fromRGB(255, 255, 255)
-label.BackgroundTransparency = 1
-label.Font = Enum.Font.GothamMedium
+local Main = Instance.new("Frame", sg)
+Main.Size = UDim2.new(0, 260, 0, 115)
+Main.Position = UDim2.new(0.5, -130, 0.2, 0)
+Main.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+local Stroke = Instance.new("UIStroke", Main)
+Stroke.Color = Color3.fromRGB(255, 0, 0)
+Stroke.Thickness = 2
+Instance.new("UICorner", Main)
 
-local btn = Instance.new("TextButton", main)
-btn.Size = UDim2.new(0, 200, 0, 35)
-btn.Position = UDim2.new(0.5, -100, 0.6, 0)
-btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-btn.Text = "JOINER (OFF)"
+local Status = Instance.new("TextLabel", Main)
+Status.Size = UDim2.new(1, 0, 0, 30)
+Status.Position = UDim2.new(0, 0, 0.15, 0)
+Status.Text = "SINCRONIZANDO COM BOT..."
+Status.TextColor3 = Color3.fromRGB(200, 200, 200)
+Status.BackgroundTransparency = 1
+Status.Font = Enum.Font.GothamMedium
+
+local btn = Instance.new("TextButton", Main)
+btn.Size = UDim2.new(0, 220, 0, 40)
+btn.Position = UDim2.new(0.5, -110, 0.6, 0)
+btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+btn.Text = "AGUARDANDO BOT"
 btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+btn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", btn)
 
--- FUNÇÃO DE TELEPORTE
+-- FUNÇÃO DE TELEPORTE USANDO OS DADOS DO BOT
 btn.MouseButton1Click:Connect(function()
-    if currentJob ~= "" then
-        TeleportService:TeleportToPlaceInstance(15561560400, currentJob, game.Players.LocalPlayer)
+    if currentJob ~= "" and currentPlace ~= 0 then
+        btn.Text = "ENTRANDO..."
+        btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(currentPlace, currentJob, Players.LocalPlayer)
+        end)
     end
 end)
 
--- LOOP DE BUSCA (MODO BYPASS)
+-- LOOP DE MONITORAMENTO
 task.spawn(function()
-    while task.wait(3) do -- Aumentado o tempo para evitar o bloqueio do executor
+    while task.wait(2) do
         local success, response = pcall(function()
-            -- Request simples para não disparar o erro de "vulnerable function"
-            return game:HttpGet(URL) 
+            return game:HttpGet(URL)
         end)
         
         if success and response then
             local data = HttpService:JSONDecode(response)
             if data and data.jobId and data.jobId ~= currentJob then
+                -- PEGA O PLACE ID QUE VEM DO BOT E LIMPA ELE
+                local rawPlace = tostring(data.placeId):gsub("%D", "") -- Remove qualquer coisa que não seja número
+                currentPlace = tonumber(rawPlace)
                 currentJob = data.jobId
-                label.Text = "VALOR: " .. (tostring(data.serverName) or "---")
+                
+                Status.Text = "BOT: " .. (data.serverName or "Online")
                 btn.Text = "ENTRAR AGORA"
-                btn.BackgroundColor3 = ACCENT
+                btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
                 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                Stroke.Color = Color3.fromRGB(0, 255, 0)
             end
-        else
-            label.Text = "ERRO DE SEGURANÇA"
-            warn("Bypass falhou ou URL errada.")
         end
     end
 end)
