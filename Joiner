@@ -1,32 +1,33 @@
--- KALIUX JOINER - DESOFUSCADO
- 
+-- [[ KALIUX JOINER - REGRAS E URL CORRIGIDAS ]] --
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
- 
+
 -- CONFIGURAÇÃO VISUAL
 local UI_NAME = "KALIUX JOINER"
 local ACCENT_COLOR = Color3.fromRGB(255, 0, 0) -- Vermelho
 local BG_COLOR = Color3.fromRGB(15, 15, 15)    -- Preto
- 
--- URL DO SEU FIREBASE (alterar para o seu)
-local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/"
- 
+
+-- URL CORRIGIDA (ADICIONADO O .json PARA AS REGRAS FUNCIONAREM)
+local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
+
 -- VARIÁVEIS DE CONTROLE
 local currentJobId = ""
-local currentPlaceId = 0
- 
+local currentPlaceId = 15561560400 -- Definido o ID padrão do Brainrot caso o bot envie errado
+
 -- CRIANDO A INTERFACE
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
- 
+
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 280, 0, 120)
 MainFrame.Position = UDim2.new(0.5, -140, 0.05, 0)
 MainFrame.BackgroundColor3 = BG_COLOR
-MainFrame.BorderSizePixel = 2
-MainFrame.BorderColor3 = ACCENT_COLOR
+MainFrame.BorderSizePixel = 0
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
- 
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = ACCENT_COLOR
+MainStroke.Thickness = 2
+
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.Text = UI_NAME
@@ -34,23 +35,23 @@ Title.TextColor3 = ACCENT_COLOR
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 18
 Title.BackgroundTransparency = 1
- 
+
 local InfoLabel = Instance.new("TextLabel", MainFrame)
 InfoLabel.Size = UDim2.new(1, 0, 0, 40)
 InfoLabel.Position = UDim2.new(0, 0, 0.25, 0)
-InfoLabel.Text = "Aguardando sinal..."
-InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+InfoLabel.Text = "📡 BUSCANDO DATABASE..."
+InfoLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 InfoLabel.Font = Enum.Font.Gotham
 InfoLabel.TextSize = 14
 InfoLabel.BackgroundTransparency = 1
- 
+
 -- BOTÃO JOINER
 local JoinButton = Instance.new("TextButton", MainFrame)
 JoinButton.Size = UDim2.new(0, 200, 0, 35)
 JoinButton.Position = UDim2.new(0.5, -100, 0.65, 0)
 JoinButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-JoinButton.Text = "JOINER"
-JoinButton.TextColor3 = Color3.fromRGB(120, 120, 120) -- Cinza enquanto desligado
+JoinButton.Text = "AGUARDANDO"
+JoinButton.TextColor3 = Color3.fromRGB(100, 100, 100)
 JoinButton.Font = Enum.Font.GothamBold
 JoinButton.TextSize = 16
 JoinButton.AutoButtonColor = true
@@ -59,7 +60,7 @@ BtnCorner.CornerRadius = UDim.new(0, 6)
 local BtnStroke = Instance.new("UIStroke", JoinButton)
 BtnStroke.Color = Color3.fromRGB(50, 50, 50)
 BtnStroke.Thickness = 2
- 
+
 -- FUNÇÃO DE TELEPORTE
 JoinButton.MouseButton1Click:Connect(function()
     if currentJobId ~= "" then
@@ -67,28 +68,40 @@ JoinButton.MouseButton1Click:Connect(function()
         TeleportService:TeleportToPlaceInstance(currentPlaceId, currentJobId, Players.LocalPlayer)
     end
 end)
- 
--- LOOP DE MONITORAMENTO DO FIREBASE
+
+-- LOOP DE MONITORAMENTO COM DEBUG
 task.spawn(function()
-    while task.wait(1) do
-        pcall(function()
-            local response = HttpService:GetAsync(FIREBASE_URL)
-            local data = HttpService:JSONDecode(response)
- 
-            if data and data.jobId and data.jobId ~= "" and data.jobId ~= currentJobId then
-                -- Atualiza as informações na tela
-                currentJobId = data.jobId
-                currentPlaceId = tonumber(data.placeId)
- 
-                InfoLabel.Text = "Valor: " .. (data.serverName or "Desconhecido")
-                InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
- 
-                -- Ativa o botão visualmente
-                JoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                JoinButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-                BtnStroke.Color = ACCENT_COLOR
-                JoinButton.Text = "ENTRAR AGORA"
-            end
+    while task.wait(1.5) do
+        local success, response = pcall(function()
+            return HttpService:GetAsync(FIREBASE_URL)
         end)
+
+        if success then
+            local data = HttpService:JSONDecode(response)
+            
+            -- Verifica se o jobId existe e é novo
+            if data and data.jobId and data.jobId ~= "" and data.jobId ~= currentJobId then
+                currentJobId = data.jobId
+                
+                -- Se o bot enviar um placeId bugado, mantemos o do jogo real
+                if data.placeId and tostring(data.placeId):len() < 15 then
+                    currentPlaceId = tonumber(data.placeId)
+                end
+
+                InfoLabel.Text = "VALOR: " .. (data.serverName or "Detected!")
+                InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+                -- Ativa o botão
+                JoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                JoinButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+                BtnStroke.Color = Color3.fromRGB(255, 255, 255)
+                JoinButton.Text = "ENTRAR AGORA"
+            elseif not data or not data.jobId then
+                InfoLabel.Text = "Database Vazia"
+            end
+        else
+            InfoLabel.Text = "❌ Erro de Regras/URL"
+            warn("Erro ao conectar no Firebase: " .. tostring(response))
+        end
     end
 end)
