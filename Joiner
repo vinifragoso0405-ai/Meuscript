@@ -1,64 +1,94 @@
--- [[ KALIUX JOINER - FINAL FIXED ]] --
+-- KALIUX JOINER - DESOFUSCADO
+ 
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
-
--- CORES E NOME
+local Players = game:GetService("Players")
+ 
+-- CONFIGURAÇÃO VISUAL
 local UI_NAME = "KALIUX JOINER"
-local ACCENT = Color3.fromRGB(255, 0, 0)
-local BG = Color3.fromRGB(15, 15, 15)
-
--- URL CORRIGIDA COM BASE NO TEU PRINT
-local URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
-
-local currentJob = ""
-
--- CRIANDO A UI
-local sg = Instance.new("ScreenGui", game.CoreGui)
-local frame = Instance.new("Frame", sg)
-frame.Size = UDim2.new(0, 240, 0, 100)
-frame.Position = UDim2.new(0.5, -120, 0.1, 0)
-frame.BackgroundColor3 = BG
-Instance.new("UIStroke", frame).Color = ACCENT
-Instance.new("UICorner", frame)
-
-local label = Instance.new("TextLabel", frame)
-label.Size = UDim2.new(1, 0, 0, 40)
-label.Position = UDim2.new(0, 0, 0.2, 0)
-label.Text = "AGUARDANDO..."
-label.TextColor3 = Color3.fromRGB(255, 255, 255)
-label.BackgroundTransparency = 1
-label.Font = Enum.Font.Gotham
-
-local btn = Instance.new("TextButton", frame)
-btn.Size = UDim2.new(0, 180, 0, 35)
-btn.Position = UDim2.new(0.5, -90, 0.6, 0)
-btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-btn.Text = "JOINER OFF"
-btn.TextColor3 = Color3.fromRGB(150, 150, 150)
-Instance.new("UICorner", btn)
-
--- MONITORAMENTO
-task.spawn(function()
-    while task.wait(1.5) do
-        local s, res = pcall(function() return HttpService:GetAsync(URL) end)
-        if s then
-            local data = HttpService:JSONDecode(res)
-            if data and data.jobId and data.jobId ~= currentJob then
-                currentJob = data.jobId
-                label.Text = "VALOR: " .. (tostring(data.serverName) or "N/A")
-                btn.Text = "JOIN SERVER"
-                btn.BackgroundColor3 = ACCENT
-                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            end
-        end
+local ACCENT_COLOR = Color3.fromRGB(255, 0, 0) -- Vermelho
+local BG_COLOR = Color3.fromRGB(15, 15, 15)    -- Preto
+ 
+-- URL DO SEU FIREBASE (alterar para o seu)
+local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/"
+ 
+-- VARIÁVEIS DE CONTROLE
+local currentJobId = ""
+local currentPlaceId = 0
+ 
+-- CRIANDO A INTERFACE
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ 
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 280, 0, 120)
+MainFrame.Position = UDim2.new(0.5, -140, 0.05, 0)
+MainFrame.BackgroundColor3 = BG_COLOR
+MainFrame.BorderSizePixel = 2
+MainFrame.BorderColor3 = ACCENT_COLOR
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+ 
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = UI_NAME
+Title.TextColor3 = ACCENT_COLOR
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.BackgroundTransparency = 1
+ 
+local InfoLabel = Instance.new("TextLabel", MainFrame)
+InfoLabel.Size = UDim2.new(1, 0, 0, 40)
+InfoLabel.Position = UDim2.new(0, 0, 0.25, 0)
+InfoLabel.Text = "Aguardando sinal..."
+InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+InfoLabel.Font = Enum.Font.Gotham
+InfoLabel.TextSize = 14
+InfoLabel.BackgroundTransparency = 1
+ 
+-- BOTÃO JOINER
+local JoinButton = Instance.new("TextButton", MainFrame)
+JoinButton.Size = UDim2.new(0, 200, 0, 35)
+JoinButton.Position = UDim2.new(0.5, -100, 0.65, 0)
+JoinButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+JoinButton.Text = "JOINER"
+JoinButton.TextColor3 = Color3.fromRGB(120, 120, 120) -- Cinza enquanto desligado
+JoinButton.Font = Enum.Font.GothamBold
+JoinButton.TextSize = 16
+JoinButton.AutoButtonColor = true
+local BtnCorner = Instance.new("UICorner", JoinButton)
+BtnCorner.CornerRadius = UDim.new(0, 6)
+local BtnStroke = Instance.new("UIStroke", JoinButton)
+BtnStroke.Color = Color3.fromRGB(50, 50, 50)
+BtnStroke.Thickness = 2
+ 
+-- FUNÇÃO DE TELEPORTE
+JoinButton.MouseButton1Click:Connect(function()
+    if currentJobId ~= "" then
+        JoinButton.Text = "TELEPORTANDO..."
+        TeleportService:TeleportToPlaceInstance(currentPlaceId, currentJobId, Players.LocalPlayer)
     end
 end)
-
-btn.MouseButton1Click:Connect(function()
-    if currentJob ~= "" then
-        -- O placeId 1099836680792370 do seu print parece muito longo, 
-        -- vou usar o que o bot enviou
-        local pId = 15561560400 
-        TeleportService:TeleportToPlaceInstance(pId, currentJob, game.Players.LocalPlayer)
+ 
+-- LOOP DE MONITORAMENTO DO FIREBASE
+task.spawn(function()
+    while task.wait(1) do
+        pcall(function()
+            local response = HttpService:GetAsync(FIREBASE_URL)
+            local data = HttpService:JSONDecode(response)
+ 
+            if data and data.jobId and data.jobId ~= "" and data.jobId ~= currentJobId then
+                -- Atualiza as informações na tela
+                currentJobId = data.jobId
+                currentPlaceId = tonumber(data.placeId)
+ 
+                InfoLabel.Text = "Valor: " .. (data.serverName or "Desconhecido")
+                InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ 
+                -- Ativa o botão visualmente
+                JoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                JoinButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+                BtnStroke.Color = ACCENT_COLOR
+                JoinButton.Text = "ENTRAR AGORA"
+            end
+        end)
     end
 end)
