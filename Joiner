@@ -1,11 +1,9 @@
--- [[ KALIUX HUB - TELEPORT REPAIRED ]] --
-
+-- [[ KALIUX HUB - FIX ABSOLUTO DE TELEPORTE ]] --
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 
 local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
-
 local currentJob = ""
 local currentPlace = 0
 
@@ -17,92 +15,63 @@ local Main = Instance.new("Frame", sg)
 Main.Size = UDim2.new(0, 260, 0, 135)
 Main.Position = UDim2.new(0.5, -130, 0.2, 0)
 Main.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-local Stroke = Instance.new("UIStroke", Main)
-Stroke.Color = Color3.fromRGB(255, 0, 0)
-Stroke.Thickness = 2
+Instance.new("UIStroke", Main).Color = Color3.fromRGB(255, 0, 0)
 Instance.new("UICorner", Main)
-
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Text = "KALIUX HUB"
-Title.TextColor3 = Color3.fromRGB(255, 0, 0)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-Title.BackgroundTransparency = 1
 
 local Status = Instance.new("TextLabel", Main)
 Status.Size = UDim2.new(1, 0, 0, 25)
 Status.Position = UDim2.new(0, 0, 0.25, 0)
-Status.Text = "AGUARDANDO SINAL..."
+Status.Text = "AGUARDANDO BOT..."
 Status.TextColor3 = Color3.fromRGB(200, 200, 200)
 Status.BackgroundTransparency = 1
-Status.Font = Enum.Font.GothamMedium
 
 local btn = Instance.new("TextButton", Main)
 btn.Size = UDim2.new(0, 220, 0, 35)
 btn.Position = UDim2.new(0.5, -110, 0.5, 0)
+btn.Text = "CONECTAR..."
 btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-btn.Text = "JOINER OFF"
 btn.TextColor3 = Color3.fromRGB(150, 150, 150)
-btn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", btn)
 
-local DiscordLabel = Instance.new("TextLabel", Main)
-DiscordLabel.Size = UDim2.new(1, -10, 0, 20)
-DiscordLabel.Position = UDim2.new(0, 0, 0.82, 0)
-DiscordLabel.Text = "discord.gg/yDAcTrPvTD"
-DiscordLabel.TextColor3 = Color3.fromRGB(114, 137, 218)
-DiscordLabel.Font = Enum.Font.Gotham
-DiscordLabel.TextSize = 11
-DiscordLabel.TextXAlignment = Enum.TextXAlignment.Right
-DiscordLabel.BackgroundTransparency = 1
-
--- FUNÇÃO DE TELEPORTE REFORÇADA
+-- FUNÇÃO DE TELEPORTE FORÇADA
 btn.MouseButton1Click:Connect(function()
     if currentJob ~= "" and currentPlace ~= 0 then
-        btn.Text = "A CONECTAR..."
-        btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        btn.Text = "CONECTANDO..."
+        btn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
         
-        -- Garante que o JobId não tem espaços ou aspas
-        local cleanJob = tostring(currentJob):gsub("%s+", ""):gsub('"', "")
-        
-        print("KALIUX DEBUG: Tentando ir para Place " .. tostring(currentPlace) .. " no Job " .. cleanJob)
-        
+        -- LIMPEZA AGRESSIVA DE DADOS
+        local targetJob = tostring(currentJob):gsub("%s+", ""):gsub('"', ""):gsub("'", "")
+        local targetPlace = tonumber(tostring(currentPlace):gsub("%D", ""))
+
+        -- Tenta teleporte direto
         local success, err = pcall(function()
-            TeleportService:TeleportToPlaceInstance(currentPlace, cleanJob, Players.LocalPlayer)
+            TeleportService:TeleportToPlaceInstance(targetPlace, targetJob, Players.LocalPlayer)
         end)
         
         if not success then
-            btn.Text = "ERRO: VER F9"
-            btn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-            warn("KALIUX ERROR: " .. tostring(err))
-            task.wait(2)
+            warn("ERRO NO TELEPORTE: " .. tostring(err))
+            btn.Text = "ERRO (VER F9)"
+            wait(2)
             btn.Text = "ENTRAR AGORA"
         end
     end
 end)
 
--- MONITORAMENTO
+-- LOOP DE BUSCA
 task.spawn(function()
-    while task.wait(1.5) do
-        local success, response = pcall(function()
-            return game:HttpGet(FIREBASE_URL)
-        end)
-        
-        if success and response then
-            local data = HttpService:JSONDecode(response)
+    while task.wait(1) do
+        local s, res = pcall(function() return game:HttpGet(FIREBASE_URL) end)
+        if s and res then
+            local data = HttpService:JSONDecode(res)
             if data and data.jobId and data.jobId ~= "" and data.jobId ~= currentJob then
-                -- Limpa o PlaceID para garantir que é um número puro
-                local cleanPlaceStr = tostring(data.placeId):gsub("%D", "")
-                currentPlace = tonumber(cleanPlaceStr)
                 currentJob = data.jobId
-                
+                currentPlace = data.placeId
                 Status.Text = "BOT: " .. (data.serverName or "Online")
                 btn.Text = "ENTRAR AGORA"
                 btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
                 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                Stroke.Color = Color3.fromRGB(0, 255, 0)
             end
         end
     end
+end)
 end)
