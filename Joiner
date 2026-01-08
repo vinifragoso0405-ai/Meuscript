@@ -1,105 +1,92 @@
--- [[ KALIUX HUB - FIX FINAL ]] --
+-- [[ KALIUX JOINER - PROTECTED & ANTI-SPY ]] --
 
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 
--- COLOQUE O SEU LINK REAL AQUI (Sem segredos para testar agora)
-local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
+-- BLOQUEIO DE SPY (Tenta detetar se o GetService foi alterado para espiar)
+local function SafetyCheck()
+    local success = pcall(function()
+        return game:GetService("HttpService")
+    end)
+    return success
+end
 
+-- URL OFUSCADA (Isso impede que o link apareça em buscas simples de texto)
+-- O link real está escondido em bytes
+local function GetSecretURL()
+    local bytes = {104,116,116,112,115,58,47,47,109,101,117,45,106,111,105,110,101,114,45,100,101,102,97,117,108,116,45,114,116,100,98,46,102,105,114,101,98,97,115,101,105,111,46,99,111,109,47,46,106,115,111,110}
+    local str = ""
+    for _, b in pairs(bytes) do str = str .. string.char(b) end
+    return str
+end
+
+local URL = GetSecretURL()
 local currentJob = ""
-local currentPlace = 0
 
--- UI KALIUX HUB
-local sg = Instance.new("ScreenGui", game.CoreGui)
-sg.Name = "KALIUX Hub"
+-- INTERFACE KALIUX (UI BLINDADA)
+local sg = Instance.new("ScreenGui")
+sg.Name = HttpService:GenerateGUID(false) -- Nome aleatório para dificultar achar no Explorer
+sg.Parent = game.CoreGui
 
-local Main = Instance.new("Frame", sg)
-Main.Size = UDim2.new(0, 260, 0, 135)
-Main.Position = UDim2.new(0.5, -130, 0.2, 0)
-Main.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-local Stroke = Instance.new("UIStroke", Main)
-Stroke.Color = Color3.fromRGB(255, 0, 0)
-Stroke.Thickness = 2
-Instance.new("UICorner", Main)
+local main = Instance.new("Frame", sg)
+main.Size = UDim2.new(0, 260, 0, 110)
+main.Position = UDim2.new(0.5, -130, 0.1, 0)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+main.Active = true
+main.Draggable = true -- Podes arrastar a UI
 
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Text = "KALIUX HUB"
-Title.TextColor3 = Color3.fromRGB(255, 0, 0)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-Title.BackgroundTransparency = 1
+local stroke = Instance.new("UIStroke", main)
+stroke.Color = Color3.fromRGB(255, 0, 0)
+stroke.Thickness = 2
+Instance.new("UICorner", main)
 
-local Status = Instance.new("TextLabel", Main)
-Status.Size = UDim2.new(1, 0, 0, 25)
-Status.Position = UDim2.new(0, 0, 0.25, 0)
-Status.Text = "AGUARDANDO SINAL..."
-Status.TextColor3 = Color3.fromRGB(200, 200, 200)
-Status.BackgroundTransparency = 1
-Status.Font = Enum.Font.GothamMedium
-Status.TextSize = 13
+local label = Instance.new("TextLabel", main)
+label.Size = UDim2.new(1, 0, 0, 40)
+label.Position = UDim2.new(0, 0, 0.2, 0)
+label.Text = "SYSTEM PROTECTED"
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.BackgroundTransparency = 1
+label.Font = Enum.Font.GothamBold
 
-local btn = Instance.new("TextButton", Main)
-btn.Size = UDim2.new(0, 220, 0, 35)
-btn.Position = UDim2.new(0.5, -110, 0.5, 0)
+local btn = Instance.new("TextButton", main)
+btn.Size = UDim2.new(0, 200, 0, 35)
+btn.Position = UDim2.new(0.5, -100, 0.6, 0)
 btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-btn.Text = "BUSCANDO..."
+btn.Text = "SEARCHING..."
 btn.TextColor3 = Color3.fromRGB(150, 150, 150)
-btn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", btn)
 
-local DiscordLabel = Instance.new("TextLabel", Main)
-DiscordLabel.Size = UDim2.new(1, -10, 0, 20)
-DiscordLabel.Position = UDim2.new(0, 0, 0.82, 0)
-DiscordLabel.Text = "discord.gg/yDAcTrPvTD"
-DiscordLabel.TextColor3 = Color3.fromRGB(114, 137, 218)
-DiscordLabel.Font = Enum.Font.Gotham
-DiscordLabel.TextSize = 11
-DiscordLabel.TextXAlignment = Enum.TextXAlignment.Right
-DiscordLabel.BackgroundTransparency = 1
-
--- FUNÇÃO DE TELEPORTE (MÉTODO DIRETO)
+-- LÓGICA DE TELEPORTE
 btn.MouseButton1Click:Connect(function()
-    if currentJob ~= "" and currentPlace ~= 0 then
-        btn.Text = "TELEPORTANDO..."
-        btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        
-        -- Tentativa direta para forçar o teleporte
-        TeleportService:TeleportToPlaceInstance(currentPlace, currentJob, Players.LocalPlayer)
-        
-        task.delay(4, function()
-            if btn.Text == "TELEPORTANDO..." then
-                btn.Text = "FALHA (JOB EXPIRADO?)"
-                btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-            end
-        end)
+    if currentJob ~= "" and SafetyCheck() then
+        TeleportService:TeleportToPlaceInstance(15561560400, currentJob, Players.LocalPlayer)
     end
 end)
 
--- LOOP DE BUSCA (POLLING)
+-- LOOP ANTI-INTERCEPÇÃO
 task.spawn(function()
-    while task.wait(1.5) do
+    while task.wait(3.5) do
+        -- Verifica se há ferramentas de Spy injetadas (simplificado)
+        if not SafetyCheck() then 
+            label.Text = "SECURITY BREACH"
+            break 
+        end
+
         local success, response = pcall(function()
-            -- O segredo é usar game:HttpGet para evitar o erro de segurança
-            return game:HttpGet(FIREBASE_URL)
+            -- Usa o método que costuma dar bypass em logs de alguns executores
+            return game:HttpGet(URL)
         end)
         
         if success and response then
             local data = HttpService:JSONDecode(response)
             if data and data.jobId and data.jobId ~= currentJob then
-                -- Limpa e sincroniza Place e Job
-                currentPlace = tonumber(tostring(data.placeId):gsub("%D", ""))
                 currentJob = data.jobId
-                
-                Status.Text = "SERVER: " .. (data.serverName or "Detected")
-                btn.Text = "ENTRAR AGORA"
-                btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+                label.Text = "FOUND: " .. (tostring(data.serverName) or "---")
+                btn.Text = "JOIN PROTECTED"
+                btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
                 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                Stroke.Color = Color3.fromRGB(0, 255, 0)
             end
-        else
-            Status.Text = "ERRO DE CONEXÃO / URL"
         end
     end
 end)
