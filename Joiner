@@ -1,24 +1,64 @@
+-- [[ KALIUX JOINER - FINAL FIXED ]] --
 local HttpService = game:GetService("HttpService")
-local url = "https://meu-joiner-default-rtdb.firebaseio.com/.json" -- COLOQUE SUA URL AQUI
+local TeleportService = game:GetService("TeleportService")
 
-print("🔎 KALIUX DEBUG: Iniciando...")
+-- CORES E NOME
+local UI_NAME = "KALIUX JOINER"
+local ACCENT = Color3.fromRGB(255, 0, 0)
+local BG = Color3.fromRGB(15, 15, 15)
 
+-- URL CORRIGIDA COM BASE NO TEU PRINT
+local URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
+
+local currentJob = ""
+
+-- CRIANDO A UI
+local sg = Instance.new("ScreenGui", game.CoreGui)
+local frame = Instance.new("Frame", sg)
+frame.Size = UDim2.new(0, 240, 0, 100)
+frame.Position = UDim2.new(0.5, -120, 0.1, 0)
+frame.BackgroundColor3 = BG
+Instance.new("UIStroke", frame).Color = ACCENT
+Instance.new("UICorner", frame)
+
+local label = Instance.new("TextLabel", frame)
+label.Size = UDim2.new(1, 0, 0, 40)
+label.Position = UDim2.new(0, 0, 0.2, 0)
+label.Text = "AGUARDANDO..."
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.BackgroundTransparency = 1
+label.Font = Enum.Font.Gotham
+
+local btn = Instance.new("TextButton", frame)
+btn.Size = UDim2.new(0, 180, 0, 35)
+btn.Position = UDim2.new(0.5, -90, 0.6, 0)
+btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+btn.Text = "JOINER OFF"
+btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+Instance.new("UICorner", btn)
+
+-- MONITORAMENTO
 task.spawn(function()
-    while task.wait(2) do
-        local success, response = pcall(function()
-            return HttpService:GetAsync(url)
-        end)
-
-        if success then
-            local data = HttpService:JSONDecode(response)
-            if data and data.jobId then
-                print("🔥 ID ENCONTRADO NO FIREBASE: " .. data.jobId)
-                -- Se chegar aqui, o problema era o nome da variável!
-            else
-                print("⚠️ Conectado ao Firebase, mas não encontrei nenhum 'jobId' lá dentro.")
+    while task.wait(1.5) do
+        local s, res = pcall(function() return HttpService:GetAsync(URL) end)
+        if s then
+            local data = HttpService:JSONDecode(res)
+            if data and data.jobId and data.jobId ~= currentJob then
+                currentJob = data.jobId
+                label.Text = "VALOR: " .. (tostring(data.serverName) or "N/A")
+                btn.Text = "JOIN SERVER"
+                btn.BackgroundColor3 = ACCENT
+                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             end
-        else
-            warn("❌ ERRO DE CONEXÃO: Verifique se o link está certo e as regras em 'true'.")
         end
+    end
+end)
+
+btn.MouseButton1Click:Connect(function()
+    if currentJob ~= "" then
+        -- O placeId 1099836680792370 do seu print parece muito longo, 
+        -- vou usar o que o bot enviou
+        local pId = 15561560400 
+        TeleportService:TeleportToPlaceInstance(pId, currentJob, game.Players.LocalPlayer)
     end
 end)
