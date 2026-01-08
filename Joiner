@@ -1,107 +1,68 @@
--- [[ KALIUX JOINER - REGRAS E URL CORRIGIDAS ]] --
+-- [[ KALIUX JOINER - BYPASS EDITION ]] --
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
 
 -- CONFIGURAÇÃO VISUAL
 local UI_NAME = "KALIUX JOINER"
-local ACCENT_COLOR = Color3.fromRGB(255, 0, 0) -- Vermelho
-local BG_COLOR = Color3.fromRGB(15, 15, 15)    -- Preto
+local ACCENT = Color3.fromRGB(255, 0, 0)
+local BG = Color3.fromRGB(15, 15, 15)
 
--- URL CORRIGIDA (ADICIONADO O .json PARA AS REGRAS FUNCIONAREM)
-local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
+-- URL DO SEU FIREBASE (COM .json)
+local URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
+local currentJob = ""
 
--- VARIÁVEIS DE CONTROLE
-local currentJobId = ""
-local currentPlaceId = 15561560400 -- Definido o ID padrão do Brainrot caso o bot envie errado
+-- INTERFACE
+local sg = Instance.new("ScreenGui", game.CoreGui)
+local main = Instance.new("Frame", sg)
+main.Size = UDim2.new(0, 260, 0, 110)
+main.Position = UDim2.new(0.5, -130, 0.1, 0)
+main.BackgroundColor3 = BG
+Instance.new("UIStroke", main).Color = ACCENT
+Instance.new("UICorner", main)
 
--- CRIANDO A INTERFACE
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local label = Instance.new("TextLabel", main)
+label.Size = UDim2.new(1, 0, 0, 40)
+label.Position = UDim2.new(0, 0, 0.2, 0)
+label.Text = "AGUARDANDO..."
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.BackgroundTransparency = 1
+label.Font = Enum.Font.GothamMedium
 
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 280, 0, 120)
-MainFrame.Position = UDim2.new(0.5, -140, 0.05, 0)
-MainFrame.BackgroundColor3 = BG_COLOR
-MainFrame.BorderSizePixel = 0
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
-local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color = ACCENT_COLOR
-MainStroke.Thickness = 2
-
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Text = UI_NAME
-Title.TextColor3 = ACCENT_COLOR
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.BackgroundTransparency = 1
-
-local InfoLabel = Instance.new("TextLabel", MainFrame)
-InfoLabel.Size = UDim2.new(1, 0, 0, 40)
-InfoLabel.Position = UDim2.new(0, 0, 0.25, 0)
-InfoLabel.Text = "📡 BUSCANDO DATABASE..."
-InfoLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-InfoLabel.Font = Enum.Font.Gotham
-InfoLabel.TextSize = 14
-InfoLabel.BackgroundTransparency = 1
-
--- BOTÃO JOINER
-local JoinButton = Instance.new("TextButton", MainFrame)
-JoinButton.Size = UDim2.new(0, 200, 0, 35)
-JoinButton.Position = UDim2.new(0.5, -100, 0.65, 0)
-JoinButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-JoinButton.Text = "AGUARDANDO"
-JoinButton.TextColor3 = Color3.fromRGB(100, 100, 100)
-JoinButton.Font = Enum.Font.GothamBold
-JoinButton.TextSize = 16
-JoinButton.AutoButtonColor = true
-local BtnCorner = Instance.new("UICorner", JoinButton)
-BtnCorner.CornerRadius = UDim.new(0, 6)
-local BtnStroke = Instance.new("UIStroke", JoinButton)
-BtnStroke.Color = Color3.fromRGB(50, 50, 50)
-BtnStroke.Thickness = 2
+local btn = Instance.new("TextButton", main)
+btn.Size = UDim2.new(0, 200, 0, 35)
+btn.Position = UDim2.new(0.5, -100, 0.6, 0)
+btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+btn.Text = "JOINER (OFF)"
+btn.TextColor3 = Color3.fromRGB(150, 150, 150)
+Instance.new("UICorner", btn)
 
 -- FUNÇÃO DE TELEPORTE
-JoinButton.MouseButton1Click:Connect(function()
-    if currentJobId ~= "" then
-        JoinButton.Text = "TELEPORTANDO..."
-        TeleportService:TeleportToPlaceInstance(currentPlaceId, currentJobId, Players.LocalPlayer)
+btn.MouseButton1Click:Connect(function()
+    if currentJob ~= "" then
+        TeleportService:TeleportToPlaceInstance(15561560400, currentJob, game.Players.LocalPlayer)
     end
 end)
 
--- LOOP DE MONITORAMENTO COM DEBUG
+-- LOOP DE BUSCA (MODO BYPASS)
 task.spawn(function()
-    while task.wait(1.5) do
+    while task.wait(3) do -- Aumentado o tempo para evitar o bloqueio do executor
         local success, response = pcall(function()
-            return HttpService:GetAsync(FIREBASE_URL)
+            -- Request simples para não disparar o erro de "vulnerable function"
+            return game:HttpGet(URL) 
         end)
-
-        if success then
+        
+        if success and response then
             local data = HttpService:JSONDecode(response)
-            
-            -- Verifica se o jobId existe e é novo
-            if data and data.jobId and data.jobId ~= "" and data.jobId ~= currentJobId then
-                currentJobId = data.jobId
-                
-                -- Se o bot enviar um placeId bugado, mantemos o do jogo real
-                if data.placeId and tostring(data.placeId):len() < 15 then
-                    currentPlaceId = tonumber(data.placeId)
-                end
-
-                InfoLabel.Text = "VALOR: " .. (data.serverName or "Detected!")
-                InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-                -- Ativa o botão
-                JoinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                JoinButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-                BtnStroke.Color = Color3.fromRGB(255, 255, 255)
-                JoinButton.Text = "ENTRAR AGORA"
-            elseif not data or not data.jobId then
-                InfoLabel.Text = "Database Vazia"
+            if data and data.jobId and data.jobId ~= currentJob then
+                currentJob = data.jobId
+                label.Text = "VALOR: " .. (tostring(data.serverName) or "---")
+                btn.Text = "ENTRAR AGORA"
+                btn.BackgroundColor3 = ACCENT
+                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             end
         else
-            InfoLabel.Text = "❌ Erro de Regras/URL"
-            warn("Erro ao conectar no Firebase: " .. tostring(response))
+            label.Text = "ERRO DE SEGURANÇA"
+            warn("Bypass falhou ou URL errada.")
         end
     end
 end)
