@@ -1,88 +1,86 @@
--- [[ KALIUX HUB - INSTANCE ID FIX ]] --
+-- [[ KALIUX HUB - AUTO JOINER OFICIAL ]] --
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
-local URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
-local currentJob = ""
-local currentPlace = 18260270114 -- ID Padrão definido para evitar nil
+-- Configurações de Conexão
+local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
+local currentJobId = ""
+local currentPlaceId = 18260270114 -- ID Padrão (Roube um Brainrot)
 
--- UI KALIUX HUB
+-- Criação da Interface (Simples e Funcional)
 local sg = Instance.new("ScreenGui", game.CoreGui)
-sg.Name = "KALIUX Hub"
+sg.Name = "KALIUX_HUB_JOINER"
 
 local Main = Instance.new("Frame", sg)
 Main.Size = UDim2.new(0, 260, 0, 130)
-Main.Position = UDim2.new(0.5, -130, 0.2, 0)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Instance.new("UICorner", Main)
+Main.Position = UDim2.new(0.5, -130, 0.3, 0)
+Main.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+Main.BorderSizePixel = 0
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
-local Status = Instance.new("TextLabel", Main)
-Status.Size = UDim2.new(1, 0, 0, 30)
-Status.Text = "BUSCANDO BOT..."
-Status.TextColor3 = Color3.fromRGB(255, 255, 255)
-Status.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Text = "KALIUX HUB"
+Title.TextColor3 = Color3.fromRGB(255, 0, 0)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.BackgroundTransparency = 1
 
-local btn = Instance.new("TextButton", Main)
-btn.Name = "JoinButton"
-btn.Size = UDim2.new(0, 220, 0, 40)
-btn.Position = UDim2.new(0.5, -110, 0.5, -10)
-btn.Text = "AGUARDANDO"
-btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-btn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", btn)
+local JoinBtn = Instance.new("TextButton", Main)
+JoinBtn.Size = UDim2.new(0, 220, 0, 45)
+JoinBtn.Position = UDim2.new(0.5, -110, 0.5, -10)
+JoinBtn.Text = "AGUARDANDO BOT..."
+JoinBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+JoinBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+JoinBtn.Font = Enum.Font.GothamBold
+JoinBtn.TextSize = 16
+Instance.new("UICorner", JoinBtn).CornerRadius = UDim.new(0, 6)
 
-local Discord = Instance.new("TextLabel", Main)
-Discord.Size = UDim2.new(1, 0, 0, 20)
-Discord.Position = UDim2.new(0, 0, 0.85, 0)
-Discord.Text = "discord.gg/yDAcTrPvTD"
-Discord.TextColor3 = Color3.fromRGB(114, 137, 218)
-Discord.BackgroundTransparency = 1
-
--- FUNÇÃO DE TELEPORTE VIA INSTANCE ID
-btn.MouseButton1Click:Connect(function()
-    if currentJob ~= "" then
-        btn.Text = "CONECTANDO..."
-        btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+-- Lógica de Teleporte via InstanceId (Job-ID)
+JoinBtn.MouseButton1Click:Connect(function()
+    if currentJobId ~= "" then
+        JoinBtn.Text = "CONECTANDO..."
+        JoinBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
         
-        -- Teleporte usando InstanceId (Job-ID)
+        -- Limpeza agressiva do ID para evitar erro de desofuscação
+        local cleanID = tostring(currentJobId):gsub("%s+", ""):gsub("\"", ""):gsub("'", "")
+        
         local success, err = pcall(function()
-            TeleportService:TeleportToPlaceInstance(tonumber(currentPlace), tostring(currentJob), Players.LocalPlayer)
+            -- O segredo para funcionar no celular é o tonumber no Place e tostring no Job
+            TeleportService:TeleportToPlaceInstance(tonumber(currentPlaceId), cleanID, LocalPlayer)
         end)
         
         if not success then
-            btn.Text = "ERRO NO ID!"
-            warn("KALIUX: Falha no teleporte: " .. tostring(err))
-            task.wait(1.5)
-            btn.Text = "ENTRAR AGORA"
-            btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+            warn("ERRO KALIUX: " .. tostring(err))
+            JoinBtn.Text = "ID EXPIRADO"
+            JoinBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+            task.wait(2)
+            JoinBtn.Text = "ENTRAR AGORA"
         end
-    else
-        btn.Text = "SEM SERVIDOR"
-        task.wait(1)
-        btn.Text = "AGUARDANDO"
     end
 end)
 
--- MONITORAMENTO DO FIREBASE (Sincronizado com KALIUX Notifier)
+-- Loop de Monitoramento (Sem Lixo de Código)
 task.spawn(function()
     while task.wait(1.5) do
-        local success, response = pcall(function()
-            return game:HttpGet(URL)
+        local success, result = pcall(function()
+            return game:HttpGet(FIREBASE_URL)
         end)
         
-        if success and response then
-            local data = HttpService:JSONDecode(response)
-            -- Verifica se o JobId recebido é novo e válido
-            if data and data.jobId and data.jobId ~= currentJob then
-                currentJob = tostring(data.jobId):gsub("%s+", "") -- Remove espaços extras
-                currentPlace = data.placeId or 18260270114
+        if success and result then
+            local data = HttpService:JSONDecode(result)
+            
+            -- Se o Bot enviou um ID novo no Firebase
+            if data and data.jobId and data.jobId ~= currentJobId then
+                currentJobId = data.jobId
+                currentPlaceId = data.placeId or 18260270114
                 
-                Status.Text = "📍 SERVER DETECTADO"
-                btn.Text = "ENTRAR AGORA"
-                btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                -- Atualiza a UI para o usuário entrar
+                JoinBtn.Text = "ENTRAR AGORA"
+                JoinBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+                JoinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
             end
         end
     end
