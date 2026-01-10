@@ -1,86 +1,70 @@
--- [[ KALIUX HUB - AUTO JOINER OFICIAL ]] --
+-- [[ KALIUX HUB - SOLUÇÃO FINAL SEM BLOQUEIO ]] --
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 
--- Configurações de Conexão
-local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
-local currentJobId = ""
-local currentPlaceId = 18260270114 -- ID Padrão (Roube um Brainrot)
+local URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
+local currentJob = ""
 
--- Criação da Interface (Simples e Funcional)
+-- UI KALIUX HUB
 local sg = Instance.new("ScreenGui", game.CoreGui)
-sg.Name = "KALIUX_HUB_JOINER"
-
 local Main = Instance.new("Frame", sg)
-Main.Size = UDim2.new(0, 260, 0, 130)
-Main.Position = UDim2.new(0.5, -130, 0.3, 0)
-Main.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-Main.BorderSizePixel = 0
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
+Main.Size = UDim2.new(0, 260, 0, 150)
+Main.Position = UDim2.new(0.5, -130, 0.2, 0)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Instance.new("UICorner", Main)
 
 local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Size = UDim2.new(1, 0, 0, 30)
 Title.Text = "KALIUX HUB"
 Title.TextColor3 = Color3.fromRGB(255, 0, 0)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
 Title.BackgroundTransparency = 1
 
-local JoinBtn = Instance.new("TextButton", Main)
-JoinBtn.Size = UDim2.new(0, 220, 0, 45)
-JoinBtn.Position = UDim2.new(0.5, -110, 0.5, -10)
-JoinBtn.Text = "AGUARDANDO BOT..."
-JoinBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-JoinBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
-JoinBtn.Font = Enum.Font.GothamBold
-JoinBtn.TextSize = 16
-Instance.new("UICorner", JoinBtn).CornerRadius = UDim.new(0, 6)
+local ServerInfo = Instance.new("TextLabel", Main)
+ServerInfo.Size = UDim2.new(1, 0, 0, 30)
+ServerInfo.Position = UDim2.new(0, 0, 0.25, 0)
+ServerInfo.Text = "Buscando Servidores..."
+ServerInfo.TextColor3 = Color3.fromRGB(255, 255, 255)
+ServerInfo.BackgroundTransparency = 1
 
--- Lógica de Teleporte via InstanceId (Job-ID)
-JoinBtn.MouseButton1Click:Connect(function()
-    if currentJobId ~= "" then
-        JoinBtn.Text = "CONECTANDO..."
-        JoinBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-        
-        -- Limpeza agressiva do ID para evitar erro de desofuscação
-        local cleanID = tostring(currentJobId):gsub("%s+", ""):gsub("\"", ""):gsub("'", "")
-        
-        local success, err = pcall(function()
-            -- O segredo para funcionar no celular é o tonumber no Place e tostring no Job
-            TeleportService:TeleportToPlaceInstance(tonumber(currentPlaceId), cleanID, LocalPlayer)
+local btn = Instance.new("TextButton", Main)
+btn.Size = UDim2.new(0, 200, 0, 40)
+btn.Position = UDim2.new(0.5, -100, 0.5, 5)
+btn.Text = "AGUARDANDO"
+btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", btn)
+
+local Discord = Instance.new("TextLabel", Main)
+Discord.Size = UDim2.new(1, 0, 0, 20)
+Discord.Position = UDim2.new(0, 0, 0.85, 0)
+Discord.Text = "discord.gg/yDAcTrPvTD"
+Discord.TextColor3 = Color3.fromRGB(114, 137, 218)
+Discord.BackgroundTransparency = 1
+
+-- TELEPORTE LIMPO (REQUER "VERIFY TELEPORTS" DESATIVADO NO DELTA)
+btn.MouseButton1Click:Connect(function()
+    if currentJob ~= "" then
+        btn.Text = "JOINING..."
+        local cleanID = tostring(currentJob):gsub("%s+", ""):gsub("\"", "")
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(18260270114, cleanID, Players.LocalPlayer)
         end)
-        
-        if not success then
-            warn("ERRO KALIUX: " .. tostring(err))
-            JoinBtn.Text = "ID EXPIRADO"
-            JoinBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-            task.wait(2)
-            JoinBtn.Text = "ENTRAR AGORA"
-        end
     end
 end)
 
--- Loop de Monitoramento (Sem Lixo de Código)
+-- LOOP FIREBASE
 task.spawn(function()
     while task.wait(1.5) do
-        local success, result = pcall(function()
-            return game:HttpGet(FIREBASE_URL)
-        end)
-        
-        if success and result then
-            local data = HttpService:JSONDecode(result)
-            
-            -- Se o Bot enviou um ID novo no Firebase
-            if data and data.jobId and data.jobId ~= currentJobId then
-                currentJobId = data.jobId
-                currentPlaceId = data.placeId or 18260270114
-                
-                -- Atualiza a UI para o usuário entrar
-                JoinBtn.Text = "ENTRAR AGORA"
-                JoinBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-                JoinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        local s, r = pcall(function() return game:HttpGet(URL) end)
+        if s and r then
+            local data = HttpService:JSONDecode(r)
+            if data and data.jobId and data.jobId ~= currentJob then
+                currentJob = data.jobId
+                ServerInfo.Text = "Valor: " .. (data.serverName or "Detectado!")
+                btn.Text = "JOIN"
+                btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
             end
         end
     end
