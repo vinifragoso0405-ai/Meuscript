@@ -1,13 +1,13 @@
--- [[ KALIUX HUB - FINAL BUG FIX ]] --
+-- [[ KALIUX HUB - INSTANCE ID FIX ]] --
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 
 local URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
 local currentJob = ""
-local currentPlace = 0
+local currentPlace = 18260270114 -- ID Padrão definido para evitar nil
 
--- UI KALIUX HUB (SIMPLIFICADA PARA EVITAR ERROS DE NIL)
+-- UI KALIUX HUB
 local sg = Instance.new("ScreenGui", game.CoreGui)
 sg.Name = "KALIUX Hub"
 
@@ -30,6 +30,7 @@ btn.Position = UDim2.new(0.5, -110, 0.5, -10)
 btn.Text = "AGUARDANDO"
 btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+btn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", btn)
 
 local Discord = Instance.new("TextLabel", Main)
@@ -39,39 +40,46 @@ Discord.Text = "discord.gg/yDAcTrPvTD"
 Discord.TextColor3 = Color3.fromRGB(114, 137, 218)
 Discord.BackgroundTransparency = 1
 
--- FUNÇÃO DE TELEPORTE (SEM FILTROS QUE QUEBRAM)
+-- FUNÇÃO DE TELEPORTE VIA INSTANCE ID
 btn.MouseButton1Click:Connect(function()
-    if currentJob ~= "" and currentPlace ~= 0 then
+    if currentJob ~= "" then
         btn.Text = "CONECTANDO..."
         btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
         
-        -- Teleporte direto com PlaceID e JobID tratados como string/number puros
+        -- Teleporte usando InstanceId (Job-ID)
         local success, err = pcall(function()
             TeleportService:TeleportToPlaceInstance(tonumber(currentPlace), tostring(currentJob), Players.LocalPlayer)
         end)
         
         if not success then
-            btn.Text = "ERRO!"
+            btn.Text = "ERRO NO ID!"
             warn("KALIUX: Falha no teleporte: " .. tostring(err))
-            task.wait(2)
+            task.wait(1.5)
             btn.Text = "ENTRAR AGORA"
+            btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
         end
+    else
+        btn.Text = "SEM SERVIDOR"
+        task.wait(1)
+        btn.Text = "AGUARDANDO"
     end
 end)
 
--- MONITORAMENTO DO FIREBASE
+-- MONITORAMENTO DO FIREBASE (Sincronizado com KALIUX Notifier)
 task.spawn(function()
-    while task.wait(2) do
+    while task.wait(1.5) do
         local success, response = pcall(function()
             return game:HttpGet(URL)
         end)
         
         if success and response then
             local data = HttpService:JSONDecode(response)
+            -- Verifica se o JobId recebido é novo e válido
             if data and data.jobId and data.jobId ~= currentJob then
-                currentJob = data.jobId
-                currentPlace = data.placeId
-                Status.Text = "SERVER DETECTADO"
+                currentJob = tostring(data.jobId):gsub("%s+", "") -- Remove espaços extras
+                currentPlace = data.placeId or 18260270114
+                
+                Status.Text = "📍 SERVER DETECTADO"
                 btn.Text = "ENTRAR AGORA"
                 btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
                 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
