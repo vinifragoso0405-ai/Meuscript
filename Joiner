@@ -1,95 +1,289 @@
--- [[ KALIUX HUB - AUTO JOINER JOB-ID ]] --
+-- KALIUX FINDER - VersÃ£o Limpa
+-- Sistema de localizaÃ§Ã£o de servidores
+
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
+local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local Player = Players.LocalPlayer
 
--- Configurações de Conexão
-local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/.json"
-local currentJobId = ""
-local currentPlaceId = 18260270114 -- ID do Jogo (Ex: Roube um Brainrot)
+-- URLs do Firebase (codificaÃ§Ã£o removida)
+local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/"
+local KEYS_URL = "SUA_FIREBASE_DE_KEY"
 
--- Interface Visual
-local sg = Instance.new("ScreenGui", game.CoreGui)
-sg.Name = "KALIUX_JOINER"
+-- Limpeza de interface anterior
+for _, v in pairs(CoreGui:GetChildren()) do
+    if v.Name == "KALIUX_Finder_Final" then
+        v:Destroy()
+    end
+end
 
-local Main = Instance.new("Frame", sg)
-Main.Size = UDim2.new(0, 280, 0, 160)
-Main.Position = UDim2.new(0.5, -140, 0.3, 0)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+-- CriaÃ§Ã£o da interface
+local MainGui = Instance.new("ScreenGui", CoreGui)
+MainGui.Name = "KALIUX_Finder_Final"
+MainGui.ResetOnSpawn = false
 
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Text = "KALIUX HUB"
-Title.TextColor3 = Color3.fromRGB(255, 0, 0)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.BackgroundTransparency = 1
+-- Tela de login
+local LoginFrame = Instance.new("Frame", MainGui)
+LoginFrame.Size = UDim2.new(0, 300, 0, 200)
+LoginFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+LoginFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+LoginFrame.Visible = true
 
-local InfoLabel = Instance.new("TextLabel", Main)
-InfoLabel.Size = UDim2.new(1, -20, 0, 40)
-InfoLabel.Position = UDim2.new(0, 10, 0, 30)
-InfoLabel.Text = "Buscando Job-ID..."
-InfoLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-InfoLabel.Font = Enum.Font.Gotham
-InfoLabel.TextSize = 14
-InfoLabel.BackgroundTransparency = 1
+local LoginCorner = Instance.new("UICorner", LoginFrame)
+LoginCorner.CornerRadius = UDim.new(0, 15)
 
-local JoinBtn = Instance.new("TextButton", Main)
-JoinBtn.Size = UDim2.new(0, 240, 0, 40)
-JoinBtn.Position = UDim2.new(0.5, -120, 0, 75)
-JoinBtn.Text = "AGUARDANDO..."
-JoinBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-JoinBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
-JoinBtn.Font = Enum.Font.GothamBold
-JoinBtn.TextSize = 16
-Instance.new("UICorner", JoinBtn).CornerRadius = UDim.new(0, 6)
+local LoginStroke = Instance.new("UIStroke", LoginFrame)
+LoginStroke.Color = Color3.fromRGB(255, 0, 0)
+LoginStroke.Thickness = 2
 
-local Discord = Instance.new("TextLabel", Main)
-Discord.Size = UDim2.new(1, 0, 0, 20)
-Discord.Position = UDim2.new(0, 0, 0, 130)
-Discord.Text = "discord.gg/yDAcTrPvTD"
-Discord.TextColor3 = Color3.fromRGB(114, 137, 218)
-Discord.BackgroundTransparency = 1
+local TitleLabel = Instance.new("TextLabel", LoginFrame)
+TitleLabel.Size = UDim2.new(1, 0, 0, 50)
+TitleLabel.Text = "KALIUX ACCESS"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 20
+TitleLabel.BackgroundTransparency = 1
 
--- Lógica de Teleporte (Função Principal)
-JoinBtn.MouseButton1Click:Connect(function()
-    if currentJobId ~= "" then
-        JoinBtn.Text = "TELEPORTANDO..."
-        JoinBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-        
-        -- Limpeza de caracteres que quebram o teleporte (Asas, Espaços)
-        local cleanID = tostring(currentJobId):gsub("%s+", ""):gsub("\"", ""):gsub("'", "")
-        
-        local success, err = pcall(function()
-            -- Realiza o teleporte para a instância específica
-            TeleportService:TeleportToPlaceInstance(tonumber(currentPlaceId), cleanID, LocalPlayer)
-        end)
-        
-        if not success then
-            warn("Erro no teleporte: " .. tostring(err))
-            JoinBtn.Text = "ERRO (VERIFY?)"
-            task.wait(2)
-            JoinBtn.Text = "JOIN"
-            JoinBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+local KeyInput = Instance.new("TextBox", LoginFrame)
+KeyInput.Size = UDim2.new(0.8, 0, 0, 40)
+KeyInput.Position = UDim2.new(0.1, 0, 0.35, 0)
+KeyInput.PlaceholderText = "Insira sua Key..."
+KeyInput.Text = ""
+KeyInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+KeyInput.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", KeyInput)
+
+local LoginButton = Instance.new("TextButton", LoginFrame)
+LoginButton.Size = UDim2.new(0.8, 0, 0, 40)
+LoginButton.Position = UDim2.new(0.1, 0, 0.65, 0)
+LoginButton.Text = "ENTRAR"
+LoginButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+LoginButton.TextColor3 = Color3.new(1, 1, 1)
+LoginButton.Font = Enum.Font.GothamBold
+Instance.new("UICorner", LoginButton)
+
+-- Painel principal (oculto inicialmente)
+local MainFrame = Instance.new("Frame", MainGui)
+MainFrame.Size = UDim2.new(0, 300, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -190)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Visible = false
+MainFrame.Draggable = true
+MainFrame.Active = true
+
+local MainCorner = Instance.new("UICorner", MainFrame)
+MainCorner.CornerRadius = UDim.new(0, 15)
+
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = Color3.fromRGB(200, 0, 0)
+
+-- Header do painel
+local Header = Instance.new("TextLabel", MainFrame)
+Header.Size = UDim2.new(1, 0, 0, 50)
+Header.Text = "KALIUX FINDER"
+Header.TextColor3 = Color3.fromRGB(255, 0, 0)
+Header.Font = Enum.Font.GothamBold
+Header.TextSize = 18
+Header.BackgroundTransparency = 1
+
+-- Sistema de abas
+local FinderTab = Instance.new("TextButton", MainFrame)
+FinderTab.Size = UDim2.new(0.5, 0, 0, 35)
+FinderTab.Position = UDim2.new(0, 0, 0, 50)
+FinderTab.Text = "FINDER"
+FinderTab.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+FinderTab.TextColor3 = Color3.new(1, 1, 1)
+
+local ConfigTab = Instance.new("TextButton", MainFrame)
+ConfigTab.Size = UDim2.new(0.5, 0, 0, 35)
+ConfigTab.Position = UDim2.new(0.5, 0, 0, 50)
+ConfigTab.Text = "CONFIG"
+ConfigTab.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+ConfigTab.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+
+-- Lista de servidores
+local ServerList = Instance.new("ScrollingFrame", MainFrame)
+ServerList.Size = UDim2.new(1, 0, 0.5, 0)
+ServerList.Position = UDim2.new(0, 0, 0.25, 0)
+ServerList.BackgroundTransparency = 1
+ServerList.ScrollBarThickness = 4
+ServerList.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
+
+local ServerListLayout = Instance.new("UIListLayout", ServerList)
+ServerListLayout.Padding = UDim.new(0, 5)
+ServerListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Ãrea de notificaÃ§Ãµes
+local NotificationArea = Instance.new("Frame", MainFrame)
+NotificationArea.Size = UDim2.new(0.9, 0, 0.3, 0)
+NotificationArea.Position = UDim2.new(0.05, 0, 0.7, 0)
+NotificationArea.BackgroundTransparency = 1
+
+local NotificationLayout = Instance.new("UIListLayout", NotificationArea)
+NotificationLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+
+-- VariÃ¡veis do sistema
+local LastJobId = ""
+local IsMonitoring = false
+
+-- FunÃ§Ã£o para mostrar notificaÃ§Ãµes
+local function ShowNotification(message)
+    local notification = Instance.new("TextLabel", NotificationArea)
+    notification.Size = UDim2.new(1, 0, 0, 25)
+    notification.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
+    notification.TextColor3 = Color3.new(1, 1, 1)
+    notification.Text = ">> " .. message
+    notification.Font = Enum.Font.GothamBold
+    notification.TextSize = 10
+    notification.TextXAlignment = Enum.TextXAlignment.Left
+    notification.PaddingLeft = UDim.new(0, 10)
+    
+    Instance.new("UICorner", notification)
+    
+    -- Remove a notificaÃ§Ã£o apÃ³s 5 segundos
+    task.delay(5, function()
+        if notification and notification.Parent then
+            notification:Destroy()
         end
+    end)
+    
+    return notification
+end
+
+-- FunÃ§Ã£o para verificar e adicionar servidor
+local function CheckAndAddServer()
+    local success, data = pcall(function()
+        local response = game:HttpGet(FIREBASE_URL)
+        return HttpService:JSONDecode(response)
+    end)
+    
+    if success and data and data.jobId then
+        if data.jobId ~= LastJobId then
+            LastJobId = data.jobId
+            
+            -- Mostra notificaÃ§Ã£o
+            ShowNotification("Novo servidor: " .. (data.serverName or "KZC"))
+            
+            -- Cria o card do servidor
+            local serverCard = Instance.new("Frame", ServerList)
+            serverCard.Size = UDim2.new(0.95, 0, 0, 55)
+            serverCard.BackgroundColor3 = Color3.fromRGB(25, 10, 10)
+            serverCard.BorderSizePixel = 0
+            
+            local cardCorner = Instance.new("UICorner", serverCard)
+            cardCorner.CornerRadius = UDim.new(0, 8)
+            
+            -- Nome do servidor
+            local serverName = Instance.new("TextLabel", serverCard)
+            serverName.Size = UDim2.new(0.6, 0, 1, 0)
+            serverName.Position = UDim2.new(0.05, 0, 0, 0)
+            serverName.Text = data.serverName or "Novo Servidor"
+            serverName.TextColor3 = Color3.new(1, 1, 1)
+            serverName.BackgroundTransparency = 1
+            serverName.TextXAlignment = Enum.TextXAlignment.Left
+            serverName.Font = Enum.Font.Gotham
+            serverName.TextSize = 14
+            
+            -- BotÃ£o para entrar
+            local joinButton = Instance.new("TextButton", serverCard)
+            joinButton.Size = UDim2.new(0.3, 0, 0.6, 0)
+            joinButton.Position = UDim2.new(0.65, 0, 0.2, 0)
+            joinButton.Text = "ENTRAR"
+            joinButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+            joinButton.TextColor3 = Color3.new(1, 1, 1)
+            joinButton.Font = Enum.Font.GothamBold
+            joinButton.TextSize = 12
+            
+            local buttonCorner = Instance.new("UICorner", joinButton)
+            buttonCorner.CornerRadius = UDim.new(0, 6)
+            
+            -- Evento do botÃ£o
+            joinButton.MouseButton1Click:Connect(function()
+                if data.placeId and data.jobId then
+                    ShowNotification("Teleportando...")
+                    TeleportService:TeleportToPlaceInstance(data.placeId, data.jobId, Player)
+                else
+                    ShowNotification("Erro: Dados invÃ¡lidos")
+                end
+            end)
+        end
+    else
+        ShowNotification("Erro ao buscar servidores")
+    end
+end
+
+-- Sistema de monitoramento
+local function StartMonitoring()
+    if IsMonitoring then return end
+    
+    IsMonitoring = true
+    ShowNotification("Conectado ao servidor")
+    
+    -- Verifica a cada 3 segundos
+    while IsMonitoring and task.wait(3) do
+        CheckAndAddServer()
+    end
+end
+
+local function StopMonitoring()
+    IsMonitoring = false
+end
+
+-- Sistema de login
+LoginButton.MouseButton1Click:Connect(function()
+    local key = KeyInput.Text
+    if key == "" then
+        KeyInput.PlaceholderText = "Digite uma key!"
+        return
+    end
+    
+    local success, response = pcall(function()
+        return game:HttpGet(KEYS_URL .. key .. ".json")
+    end)
+    
+    if success and response ~= "null" then
+        local keyData = HttpService:JSONDecode(response)
+        
+        -- Verifica se a key estÃ¡ expirada
+        if os.time() * 1000 < keyData.expiresAt then
+            -- Login bem-sucedido
+            LoginFrame:Destroy()
+            MainFrame.Visible = true
+            StartMonitoring()
+        else
+            KeyInput.Text = ""
+            KeyInput.PlaceholderText = "KEY EXPIRADA!"
+        end
+    else
+        KeyInput.Text = ""
+        KeyInput.PlaceholderText = "KEY INVÃLIDA!"
     end
 end)
 
--- Monitoramento do Firebase
-task.spawn(function()
-    while task.wait(1.5) do
-        local s, r = pcall(function() return game:HttpGet(FIREBASE_URL) end)
-        if s and r then
-            local data = HttpService:JSONDecode(r)
-            if data and data.jobId and data.jobId ~= currentJobId then
-                currentJobId = data.jobId
-                InfoLabel.Text = "📍 Servidor: " .. (data.serverName or "Encontrado!") --
-                JoinBtn.Text = "JOIN"
-                JoinBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-                JoinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            end
-        end
-    end
+-- Sistema de abas
+FinderTab.MouseButton1Click:Connect(function()
+    FinderTab.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    FinderTab.TextColor3 = Color3.new(1, 1, 1)
+    ConfigTab.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    ConfigTab.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    
+    -- Aqui vocÃª pode adicionar funcionalidade para mostrar conteÃºdo da aba FINDER
 end)
+
+ConfigTab.MouseButton1Click:Connect(function()
+    ConfigTab.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    ConfigTab.TextColor3 = Color3.new(1, 1, 1)
+    FinderTab.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    FinderTab.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    
+    -- Aqui vocÃª pode adicionar funcionalidade para mostrar conteÃºdo da aba CONFIG
+end)
+
+-- Limpeza ao fechar
+MainGui.Destroying:Connect(function()
+    StopMonitoring()
+end)
+
+-- Mensagem inicial
+ShowNotification("Sistema carregado. Insira sua key.")
