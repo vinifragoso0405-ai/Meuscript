@@ -1,5 +1,5 @@
--- KALIUX FINDER - VersÃ£o Limpa
--- Sistema de localizaÃ§Ã£o de servidores
+-- KALIUX FINDER - Versão Limpa
+-- Sistema de localização de servidores
 
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
@@ -7,9 +7,8 @@ local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 
--- URLs do Firebase (codificaÃ§Ã£o removida)
+-- URLs do Firebase
 local FIREBASE_URL = "https://meu-joiner-default-rtdb.firebaseio.com/"
-local KEYS_URL = "SUA_FIREBASE_DE_KEY"
 
 -- Limpeza de interface anterior
 for _, v in pairs(CoreGui:GetChildren()) do
@@ -18,57 +17,17 @@ for _, v in pairs(CoreGui:GetChildren()) do
     end
 end
 
--- CriaÃ§Ã£o da interface
+-- Criação da interface
 local MainGui = Instance.new("ScreenGui", CoreGui)
 MainGui.Name = "KALIUX_Finder_Final"
 MainGui.ResetOnSpawn = false
 
--- Tela de login
-local LoginFrame = Instance.new("Frame", MainGui)
-LoginFrame.Size = UDim2.new(0, 300, 0, 200)
-LoginFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
-LoginFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-LoginFrame.Visible = true
-
-local LoginCorner = Instance.new("UICorner", LoginFrame)
-LoginCorner.CornerRadius = UDim.new(0, 15)
-
-local LoginStroke = Instance.new("UIStroke", LoginFrame)
-LoginStroke.Color = Color3.fromRGB(255, 0, 0)
-LoginStroke.Thickness = 2
-
-local TitleLabel = Instance.new("TextLabel", LoginFrame)
-TitleLabel.Size = UDim2.new(1, 0, 0, 50)
-TitleLabel.Text = "KALIUX ACCESS"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 20
-TitleLabel.BackgroundTransparency = 1
-
-local KeyInput = Instance.new("TextBox", LoginFrame)
-KeyInput.Size = UDim2.new(0.8, 0, 0, 40)
-KeyInput.Position = UDim2.new(0.1, 0, 0.35, 0)
-KeyInput.PlaceholderText = "Insira sua Key..."
-KeyInput.Text = ""
-KeyInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-KeyInput.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", KeyInput)
-
-local LoginButton = Instance.new("TextButton", LoginFrame)
-LoginButton.Size = UDim2.new(0.8, 0, 0, 40)
-LoginButton.Position = UDim2.new(0.1, 0, 0.65, 0)
-LoginButton.Text = "ENTRAR"
-LoginButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-LoginButton.TextColor3 = Color3.new(1, 1, 1)
-LoginButton.Font = Enum.Font.GothamBold
-Instance.new("UICorner", LoginButton)
-
--- Painel principal (oculto inicialmente)
+-- Painel principal (Agora visível por padrão)
 local MainFrame = Instance.new("Frame", MainGui)
 MainFrame.Size = UDim2.new(0, 300, 0, 380)
 MainFrame.Position = UDim2.new(0.5, -150, 0.5, -190)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.Visible = false
+MainFrame.Visible = true -- Alterado para true para remover a Key
 MainFrame.Draggable = true
 MainFrame.Active = true
 
@@ -105,6 +64,20 @@ ConfigTab.TextColor3 = Color3.new(0.6, 0.6, 0.6)
 -- Lista de servidores
 local ServerList = Instance.new("ScrollingFrame", MainFrame)
 ServerList.Size = UDim2.new(1, 0, 0.5, 0)
+ServerList.Position = UDim2.new(0, 0, 0.25, 0)
+ServerList.BackgroundTransparency = 1
+ServerList.ScrollBarThickness = 4
+ServerList.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
+
+local ServerListLayout = Instance.new("UIListLayout", ServerList)
+ServerListLayout.Padding = UDim.new(0, 5)
+ServerListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- Área de notificações
+local NotificationArea = Instance.new("Frame", MainFrame)
+NotificationArea.Size = UDim2.new(0.9, 0, 0.3, 0)
+NotificationArea.Position = UDim2.new(0.05, 0, 0.7, 0)
+NotificationArea.BackgroundTransparency = 1
 ServerList.Position = UDim2.new(0, 0, 0.25, 0)
 ServerList.BackgroundTransparency = 1
 ServerList.ScrollBarThickness = 4
